@@ -208,6 +208,16 @@
       .play_bar.playing {
         transform: rotate(0);
       }
+
+      .list-enter-active,
+      .list-leave-active {
+        transition: all 1s;
+      }
+      .list-enter, .list-leave-to
+/* .list-leave-active for below version 2.1.8 */ {
+        opacity: 0;
+        /* transform: translateX(30px); */
+      }
     </style>
   </head>
 
@@ -216,35 +226,54 @@
       <div class="play_wrap" id="player">
         <div class="search_bar">
           <img src="images/player_title.png" alt="" />
-          <input type="text"  v-model="keywords" @keyup.enter="querySong"/>
+          <input type="text" v-model="keywords" @keyup.enter="querySong" />
         </div>
         <div class="center_con">
           <div class="song_wrapper">
-            <ul class="song_list">
-              <li v-for="(item, index) in songList" :key="item.id" @dblclick="playMusic(item.id)">
-                  <a href="" v-show="item.mvid" @click.prevent="playMv(item.mvid)" style="text-decoration:none">[MV]</a>
-                {{item.name}}--{{item.artists[0].name}}
+            <transition-group class="song_list" name="list" tag="ul" v-on:after-enter="afterEnter">
+              <li
+                v-for="(item, index) in songList"
+                :key="item.id"
+                @dblclick="playMusic(item.id)"
+                :style="{transitionDelay:10*index+'ms'}"
+              >
+                <a
+                  href=""
+                  v-show="item.mvid"
+                  @click.prevent="playMv(item.mvid)"
+                  style="text-decoration:none"
+                  >[MV]</a>
+                {{ item.name }}--{{ item.artists[0].name }}
               </li>
-            </ul>
+            </transition-group>
           </div>
           <div class="player_con">
-            <img src="images/player_bar.png" class="play_bar" :class="{playing:isPlaying}" />
+            <img
+              src="images/player_bar.png"
+              class="play_bar"
+              :class="{playing:isPlaying}"
+            />
             <!-- 黑胶碟片 -->
-            <img src="images/disc.png" class="disc autoRotate" :class="{playing:isPlaying}" />
-            <img :src="musicCover?musicCover:'./images/cover.png'" class="cover autoRotate" :class="{playing:isPlaying}" />
+            <img
+              src="images/disc.png"
+              class="disc autoRotate"
+              :class="{playing:isPlaying}"
+            />
+            <img
+              :src="musicCover?musicCover:'./images/cover.png'"
+              class="cover autoRotate"
+              :class="{playing:isPlaying}"
+            />
           </div>
           <div class="comment_list">
             <div>
-              <dl v-for="(item, index) in musicComment" :key="item.commentId" >
+              <dl v-for="(item, index) in musicComment" :key="item.commentId">
                 <dt>
-                  <img
-                    :src="item.user.avatarUrl"
-                    alt=""
-                  />
+                  <img :src="item.user.avatarUrl" alt="" />
                 </dt>
-                <dd class="name">{{item.user.nickname}}</dd>
+                <dd class="name">{{ item.user.nickname }}</dd>
                 <dd class="detail">
-                  {{item.content}}
+                  {{ item.content }}
                 </dd>
               </dl>
             </div>
@@ -268,68 +297,72 @@
     <!-- 滚动 -->
     <script src="./lib/iscroll.js"></script>
     <script>
-       new Vue({
-         el:'#music-player',
-         data:{
-           // 搜歌
-           keywords:'只因你太美',
-           //搜索到的歌曲列表
-           songList:[],
+      new Vue({
+        el: '#music-player',
+        data: {
+          // 搜歌
+          keywords: '只因你太美',
+          //搜索到的歌曲列表
+          songList: [],
           //  歌曲的Url
-           musicUrl:'',
+          musicUrl: '',
           //  储存封面Url
-          musicCover:'',
+          musicCover: '',
           // 储存热评
-          musicComment:[],
+          musicComment: [],
           // 设置播放状态
-          isPlaying:false
-         },
-         methods: {
-           //搜索歌曲
-          querySong(){
-            axios.get(`https://autumnfish.cn/search?keywords=${this.keywords}`)
-            .then(res=>{
-              console.log(res)
-              this.songList = res.data.result.songs
-            }).catch(err=>{
-              // console.log(err)
-            })
+          isPlaying: false
+        },
+        methods: {
+          //搜索歌曲
+          querySong() {
+            this.songList = []
+            axios
+              .get(`https://autumnfish.cn/search?keywords=${this.keywords}`)
+              .then(res => {
+                console.log(res)
+                this.songList = res.data.result.songs
+              })
+              .catch(err => {
+                // console.log(err)
+              })
           },
           // 播歌
-          playMusic(id){
-            axios.get(`https://autumnfish.cn/song/url?id=${id}`)
-            .then(res=>{
+          playMusic(id) {
+            axios.get(`https://autumnfish.cn/song/url?id=${id}`).then(res => {
               // console.log(res)
               this.musicUrl = res.data.data[0].url
             })
             // 获取封面
-            axios.get(`https://autumnfish.cn/song/detail?ids=${id}`)
-            .then(res=>{
-              // console.log(res)
-              this.musicCover = res.data.songs[0].al.picUrl
-
-            })
+            axios
+              .get(`https://autumnfish.cn/song/detail?ids=${id}`)
+              .then(res => {
+                // console.log(res)
+                this.musicCover = res.data.songs[0].al.picUrl
+              })
             // 获取热评
-            axios.get(`https://autumnfish.cn/comment/hot?id=${id}&type=0`)
-            .then(res=>{
-              // console.log(res)
-              this.musicComment=res.data.hotComments
-            })
+            axios
+              .get(`https://autumnfish.cn/comment/hot?id=${id}&type=0`)
+              .then(res => {
+                // console.log(res)
+                this.musicComment = res.data.hotComments
+              })
           },
-          playMv(id){
-            axios.get(`https://autumnfish.cn/mv/url?id=${id}`)
-            .then(res=>{
+          playMv(id) {
+            axios.get(`https://autumnfish.cn/mv/url?id=${id}`).then(res => {
               console.log(res)
-              if (res.data.data.code==200) {
+              if (res.data.data.code == 200) {
                 window.open(res.data.data.url)
-              }else{
-                alert("没有这个mv")
+              } else {
+                alert('没有这个mv')
               }
             })
+          },
+          afterEnter(el){
+            el.style.transitionDelay=''
           }
-         },
-       })
+        }
+      })
     </script>
-  
   </body>
 </html>
