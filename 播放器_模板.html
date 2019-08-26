@@ -230,20 +230,20 @@
             <img src="images/player_bar.png" class="play_bar playing" />
             <!-- 黑胶碟片 -->
             <img src="images/disc.png" class="disc autoRotate playing" />
-            <img src="./images/cover.png" class="cover autoRotate playing" />
+            <img :src="musicCover" class="cover autoRotate playing" />
           </div>
           <div class="comment_list">
             <div>
-              <dl>
+              <dl v-for="(item, index) in musicComment" :key="item.commentId" >
                 <dt>
                   <img
-                    src="https://p3.music.126.net/2cwPUmMgb6XImVwNy-FcIw==/109951163863553426.jpg"
+                    :src="item.user.avatarUrl"
                     alt=""
                   />
                 </dt>
-                <dd class="name">Teoeo_</dd>
+                <dd class="name">{{item.user.nickname}}</dd>
                 <dd class="detail">
-                  你没听出来汪老师一直在配合刘乐瑶唱吗，他大部分时间在给刘乐瑶和音，而且唱的是女生的key，因为是孩子们的节目，他想让孩子更多的展现自己的优点，所以汪老师尽量地配合刘乐瑶的声音唱，如果是汪苏泷一个人唱，他不会这样唱的。
+                  {{item.content}}
                 </dd>
               </dl>
             </div>
@@ -273,7 +273,11 @@
            //搜索到的歌曲列表
            songList:[],
           //  歌曲的Url
-           musicUrl:''
+           musicUrl:'',
+          //  储存封面Url
+          musicCover:'',
+          // 储存热评
+          musicComment:[]
          },
          methods: {
            //搜索歌曲
@@ -283,15 +287,27 @@
               console.log(res)
               this.songList = res.data.result.songs
             }).catch(err=>{
-              console.log(err)
+              // console.log(err)
             })
           },
           // 播歌
           playMusic(id){
             axios.get(`https://autumnfish.cn/song/url?id=${id}`)
             .then(res=>{
-              console.log(res)
+              // console.log(res)
               this.musicUrl = res.data.data[0].url
+            })
+            // 获取封面
+            axios.get(`https://autumnfish.cn/song/detail?ids=${id}`)
+            .then(res=>{
+              // console.log(res)
+              this.musicCover = res.data.songs[0].al.picUrl
+
+            })
+            axios.get(`https://autumnfish.cn/comment/hot?id=${id}&type=0`)
+            .then(res=>{
+              // console.log(res)
+              this.musicComment=res.data.hotComments
             })
           }
          },
