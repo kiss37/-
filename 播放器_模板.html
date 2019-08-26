@@ -222,6 +222,7 @@
           <div class="song_wrapper">
             <ul class="song_list">
               <li v-for="(item, index) in songList" :key="item.id" @dblclick="playMusic(item.id)">
+                  <a href="" v-show="item.mvid" @click.prevent="playMv(item.mvid)" style="text-decoration:none">[MV]</a>
                 {{item.name}}--{{item.artists[0].name}}
               </li>
             </ul>
@@ -304,10 +305,22 @@
               this.musicCover = res.data.songs[0].al.picUrl
 
             })
+            // 获取热评
             axios.get(`https://autumnfish.cn/comment/hot?id=${id}&type=0`)
             .then(res=>{
               // console.log(res)
               this.musicComment=res.data.hotComments
+            })
+          },
+          playMv(id){
+            axios.get(`https://autumnfish.cn/mv/url?id=${id}`)
+            .then(res=>{
+              console.log(res)
+              if (res.data.data.code==200) {
+                window.open(res.data.data.url)
+              }else{
+                alert("没有这个mv")
+              }
             })
           }
          },
