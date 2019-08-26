@@ -229,8 +229,14 @@
           <input type="text" v-model="keywords" @keyup.enter="querySong" />
         </div>
         <div class="center_con">
-          <div class="song_wrapper">
-            <transition-group class="song_list" name="list" tag="ul" v-on:after-enter="afterEnter">
+          <div class="song_wrapper" ref="songWrapper">
+            <transition-group
+              class="song_list"
+              name="list"
+              tag="ul"
+              v-on:after-enter="afterEnter"
+              @leave="leave"
+            >
               <li
                 v-for="(item, index) in songList"
                 :key="item.id"
@@ -242,7 +248,8 @@
                   v-show="item.mvid"
                   @click.prevent="playMv(item.mvid)"
                   style="text-decoration:none"
-                  >[MV]</a>
+                  >[MV]</a
+                >
                 {{ item.name }}--{{ item.artists[0].name }}
               </li>
             </transition-group>
@@ -265,9 +272,9 @@
               :class="{playing:isPlaying}"
             />
           </div>
-          <div class="comment_list">
+          <div class="comment_list" ref="comment_list">
             <div>
-              <dl v-for="(item, index) in musicComment" :key="item.commentId">
+              <dl v-for="(item, index) in musicComment" :key="item.commentId" @leave="leave">
                 <dt>
                   <img :src="item.user.avatarUrl" alt="" />
                 </dt>
@@ -313,22 +320,36 @@
           // 设置播放状态
           isPlaying: false
         },
+        // mounted() {},
         methods: {
           //搜索歌曲
           querySong() {
+            if (this.leftScroll) {
+              this.leftScroll.destroy()
+            }
             this.songList = []
             axios
               .get(`https://autumnfish.cn/search?keywords=${this.keywords}`)
               .then(res => {
                 console.log(res)
+                // 更新dom
                 this.songList = res.data.result.songs
+                // 跟新之后告诉isscroll高度变化了
+                this.$nextTick(() => {
+                  this.leftScroll = new IScroll(this.$refs.songWrapper, {
+                    mouseWheel: true
+                  })
+                })
               })
               .catch(err => {
-                // console.log(err)
+                console.log(err)
               })
           },
           // 播歌
           playMusic(id) {
+            if (this.myScroll) {
+              this.myScroll.destroy()
+            }
             axios.get(`https://autumnfish.cn/song/url?id=${id}`).then(res => {
               // console.log(res)
               this.musicUrl = res.data.data[0].url
@@ -346,6 +367,13 @@
               .then(res => {
                 // console.log(res)
                 this.musicComment = res.data.hotComments
+                // 跟新之后告诉isscroll高度变化了
+                this.$nextTick(() => {
+                  this.myScroll = new IScroll(this.$refs.comment_list, {
+                    mouseWheel: true,
+                    scrollbars: true
+                  })
+                })
               })
           },
           playMv(id) {
@@ -358,8 +386,11 @@
               }
             })
           },
-          afterEnter(el){
-            el.style.transitionDelay=''
+          afterEnter(el) {
+            el.style.transitionDelay = ''
+          },
+          leave(el, done) {
+            done()
           }
         }
       })
